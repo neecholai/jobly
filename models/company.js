@@ -11,11 +11,12 @@ class Company {
 
   static async create({ handle, name, num_employees, description, logo_url }) {
 
+
     try {
       const result = await db.query(
         `INSERT INTO companies
           (handle, name, num_employees, description, logo_url)
-          VALUES $1, $2, $3, $4, $5
+          VALUES ($1, $2, $3, $4, $5)
           RETURNING handle, name, num_employees, description, logo_url`,
         [handle, name, num_employees, description, logo_url]
       );
@@ -36,18 +37,27 @@ class Company {
    * Returns [ {handle, name} ... ]
    */
 
-  static async getCompanies(search = "", min_employees = -Infinity, max_employees = Infinity) {
+  static async getCompanies(search, min_employees, max_employees) {
     if (min_employees > max_employees) {
       throw new ExpressError('Minimum employees cannot be greater than maximum employees', 400);
     }
 
+    // Max and minimum integers that SQL accepts.
+    let maxInt = 2147483647;
+    let minInt = -2147483647;
+
+    // Defaults for parameters if undefined.
+    if (!min_employees) min_employees = minInt;
+    if (!max_employees) max_employees = maxInt;
+    if (!search) search = "";
+
     const result = await db.query(
       `SELECT handle, name
         FROM companies
-        WHERE name ILIKE '%$1%' 
+        WHERE name ILIKE $1 
         AND num_employees > $2 
         AND num_employees < $3`,
-      [search, min_employees, max_employees]
+      [`%${search}%`, min_employees, max_employees]
     );
 
     const companies = result.rows;
@@ -93,7 +103,7 @@ class Company {
     
     /*
     Update company only with columns/items that are passed in as arguments.
-    sqlForPartialUpdate returns "UPDATE" query for specified columns passed in,
+    sqlForPartialUpdate returcns "UPDATE" query for specified columns passed in,
     and 'values' is array of the values to be updated, and the handle that we query by
     */
     const { query, values } = sqlForPartialUpdate("companies", items, "handle", handle);
@@ -125,3 +135,5 @@ class Company {
     return { message: "Company deleted" }
   }
 }
+
+module.exports = Company;
