@@ -5,14 +5,14 @@
  * - items: an object with keys of columns you want to update and values with
  *          updated values
  * - key: the column that we query by (e.g. username, handle, id)
- * - id: current record ID
+ * - keyVal: current record ID
  *
  * Returns object containing a DB query as a string, and array of
  * string values to be updated
  *
  */
 
-function sqlForPartialUpdate(table, items, key, id) {
+function sqlForPartialUpdate(table, items, key, keyVal) {
   // keep track of item indexes
   // store all the columns we want to update and associate with vals
 
@@ -36,7 +36,7 @@ function sqlForPartialUpdate(table, items, key, id) {
   let query = `UPDATE ${table} SET ${cols} WHERE ${key}=$${idx} RETURNING *`;
 
   let values = Object.values(items);
-  values.push(id);
+  values.push(keyVal);
 
   return { query, values };
 }
