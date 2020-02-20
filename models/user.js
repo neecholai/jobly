@@ -16,7 +16,7 @@ class User {
       const result = await db.query(
         `INSERT INTO users
           (username, password, first_name, last_name, email, photo_url)
-          VALUES ($1, $2, $3, $4, $5, $6, $7)
+          VALUES ($1, $2, $3, $4, $5, $6)
           RETURNING username, first_name, last_name, email, photo_url`,
         [username, password, first_name, last_name, email, photo_url]
       );
@@ -94,7 +94,13 @@ class User {
       const result = await db.query(query, values);
       const user = result.rows[0];
 
-      return user;
+      return {
+        username: user.username,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+        photo_url: user.photo_url
+      };
     }
     catch (err) {
       throw new ExpressError('Invalid input', 400);

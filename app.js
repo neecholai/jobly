@@ -8,6 +8,7 @@ const morgan = require("morgan");
 
 const companiesRoutes = require("./routes/companiesRoutes");
 const jobsRoutes = require("./routes/jobsRoutes");
+const usersRoutes = require("./routes/usersRoutes");
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use(express.json());
 
 app.use("/companies", companiesRoutes);
 app.use("/jobs", jobsRoutes);
+app.use("/users", usersRoutes);
 
 // add logging system
 app.use(morgan("tiny"));
