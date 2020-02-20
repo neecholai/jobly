@@ -55,12 +55,15 @@ describe('Company Model', () => {
         description: "Elon Musk's lil' baby boy is growing.",
         logo_url: "https://ih0.redbubble.net/image.815733429.5771/fposter,small,wall_texture,product,750x1000.u2.jpg"
       });
+
+      // should only return companies with 'apple' in the name
       let companies = await Company.getCompanies("apple");
       expect(companies).toEqual([{
         handle: c1.handle,
         name: c1.name
       }]);
 
+      // should only return companies with num employees less than or equal to 2500
       companies = await Company.getCompanies("", 0, 2500);
       expect(companies).toEqual([{
         handle: c2.handle,
