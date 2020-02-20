@@ -1,0 +1,63 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://example.com/root.json",
+  "type": "object",
+  "title": "The Root Schema",
+  "minProperties": 1,
+  "required": [
+  ],
+  "properties": {
+    "title": {
+      "$id": "#/properties/title",
+      "type": "string",
+      "title": "The Title Schema",
+      "default": "",
+      "examples": [
+        "job title"
+      ],
+      "pattern": "^(.*)$"
+    },
+    "salary": {
+      "$id": "#/properties/salary",
+      "type": "number",
+      "title": "The Salary Schema",
+      "default": 0,
+      "examples": [
+        1
+      ],
+      "minimum": 0.0
+    },
+    "equity": {
+      "$id": "#/properties/equity",
+      "type": "number",
+      "title": "The Equity Schema",
+      "default": 0.0,
+      "examples": [
+        0.5
+      ],
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    "company_handle": {
+      "$id": "#/properties/company_handle",
+      "type": "string",
+      "title": "The Company_handle Schema",
+      "default": "",
+      "examples": [
+        "test"
+      ],
+      "pattern": "^(.*)$"
+    },
+    "date_posted": {
+      "$id": "#/properties/date_posted",
+      "type": "string",
+      "title": "The Date_posted Schema",
+      "default": "",
+      "examples": [
+        "2017-04-30 07:15"
+      ],
+      "pattern": "^(.*)$"
+    }
+  }
+}
