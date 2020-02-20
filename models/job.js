@@ -106,7 +106,7 @@ class Job {
   /**
    * Update values for job resource only for specified columns
    * Returns { id, title, salary, equity, company_handle, date_posted }
-   * Throws error if company does not exist.
+   * Throws error if job does not exist.
    */
 
   static async updateJob(id, items) {
