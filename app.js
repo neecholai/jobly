@@ -6,9 +6,13 @@ const ExpressError = require("./helpers/expressError");
 
 const morgan = require("morgan");
 
+const companyRoutes = require("./routes/companiesRoutes")
+
 const app = express();
 
 app.use(express.json());
+
+app.use("/companies", companyRoutes);
 
 // add logging system
 app.use(morgan("tiny"));
@@ -26,7 +30,9 @@ app.use(function(req, res, next) {
 
 app.use(function(err, req, res, next) {
   res.status(err.status || 500);
-  console.error(err.stack);
+  if(process.env.NODE_ENV !== 'test') {
+    console.error(err.stack);
+  }
 
   return res.json({
     status: err.status,

@@ -14,11 +14,7 @@ const router = new express.Router();
 
 router.get('/', async (req, res, next) => {
   try {
-
-    const search = req.query.search;
-    const min_employees = req.query.min_employees;
-    const max_employees = req.query.max_employees;
-    const companies = Company.getCompanies(search, min_employees, max_employees);
+    const companies = await Company.getCompanies(req.query);
 
     return res.json({ companies });
   } 
@@ -106,7 +102,7 @@ router.patch('/:handle', async (req, res, next) => {
 
 router.delete('/:handle', async (req, res, next) => {
   try {
-    const result = Company.deleteCompany(req.params.handle);
+    const result = await Company.deleteCompany(req.params.handle);
     return res.json(result);
   }
 
@@ -114,3 +110,5 @@ router.delete('/:handle', async (req, res, next) => {
     return next(err);
   }
 });
+
+module.exports = router;

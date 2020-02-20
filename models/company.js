@@ -20,13 +20,13 @@ class Company {
           RETURNING handle, name, num_employees, description, logo_url`,
         [handle, name, num_employees, description, logo_url]
       );
-  
+
       const company = result.rows[0];
 
       return company;
     }
 
-    catch(err) {
+    catch (err) {
       throw new ExpressError("Could not add new company", 400);
     }
   };
@@ -37,26 +37,27 @@ class Company {
    * Returns [ {handle, name} ... ]
    */
 
-  static async getCompanies(search, min_employees, max_employees) {
+  static async getCompanies({search, min_employees, max_employees}) {
+    
+    // Max and minimum integers that SQL accepts.
+    let maxInt = 2147483647;
+    let minInt = 0;
+    
+    // Defaults for parameters if undefined.
+    min_employees = min_employees || minInt;
+    max_employees = max_employees || maxInt;
+    search = search || "";
+    
     if (min_employees > max_employees) {
       throw new ExpressError('Minimum employees cannot be greater than maximum employees', 400);
     }
-
-    // Max and minimum integers that SQL accepts.
-    let maxInt = 2147483647;
-    let minInt = -2147483647;
-
-    // Defaults for parameters if undefined.
-    if (!min_employees) min_employees = minInt;
-    if (!max_employees) max_employees = maxInt;
-    if (!search) search = "";
 
     const result = await db.query(
       `SELECT handle, name
         FROM companies
         WHERE name ILIKE $1 
-        AND num_employees > $2 
-        AND num_employees < $3`,
+        AND num_employees >= $2 
+        AND num_employees <= $3`,
       [`%${search}%`, min_employees, max_employees]
     );
 
@@ -72,17 +73,17 @@ class Company {
    */
 
   static async getCompany(handle) {
-    
+
     const result = await db.query(
       `SELECT handle, name, num_employees, description, logo_url
         FROM companies WHERE handle = $1`,
-        [handle]
+      [handle]
     );
 
     const company = result.rows[0]
 
     if (!company) {
-      throw new ExpressError("Company does not exist.", 404);
+      throw new ExpressError("Company does not exist", 404);
     }
 
     return company;
@@ -100,17 +101,22 @@ class Company {
     will thrown an error.
     */
     await Company.getCompany(handle);
-    
+
     /*
     Update company only with columns/items that are passed in as arguments.
     sqlForPartialUpdate returcns "UPDATE" query for specified columns passed in,
     and 'values' is array of the values to be updated, and the handle that we query by
     */
-    const { query, values } = sqlForPartialUpdate("companies", items, "handle", handle);
-    const result = await db.query(query, values);
-    const company = result.rows[0];
+    try {
+      const { query, values } = sqlForPartialUpdate("companies", items, "handle", handle);
+      const result = await db.query(query, values);
+      const company = result.rows[0];
 
-    return company;
+      return company;
+    }
+    catch (err) {
+      throw new ExpressError('Invalid input', 400);
+    }
   }
 
   /**
@@ -120,16 +126,17 @@ class Company {
    */
 
   static async deleteCompany(handle) {
-    
+
     const result = await db.query(`
     DELETE FROM companies
-    WHERE handle=$1`,
-    [handle]);
+    WHERE handle=$1
+    RETURNING handle`,
+      [handle]);
 
     const company = result.rows[0]
 
     if (!company) {
-      throw new ExpressError("Company does not exist.", 404);
+      throw new ExpressError("Company does not exist", 404);
     }
 
     return { message: "Company deleted" }
