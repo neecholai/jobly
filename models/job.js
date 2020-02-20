@@ -11,11 +11,6 @@ class Job {
 
   static async create({ title, salary, equity, company_handle }) {
 
-    console.log("TITLE", title);
-    console.log("salary", salary);
-    console.log("equity", equity);
-    console.log("company_handle", company_handle);
-
     try {
       const result = await db.query(
         `INSERT INTO jobs
@@ -42,7 +37,7 @@ class Job {
    * Returns [ { title, company_handle }, ... ]
    */
 
-  static async getJobs({search, min_salary, min_equity}) {
+  static async getJobs(search, min_salary, min_equity) {
     // Defaults for parameters if undefined.
     min_salary = min_salary || 0;
     min_equity = min_equity || 0;
@@ -91,7 +86,9 @@ class Job {
       throw new ExpressError("Job does not exist", 404);
     }
 
-    const job = result.rows[0].map(job => ({
+    console.log("RESULTS", result.rows[0]);
+
+    const job = result.rows.map(job => ({
       id: job.id,
       title: job.title,
       salary: job.salary,

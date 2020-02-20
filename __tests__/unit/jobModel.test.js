@@ -10,7 +10,7 @@ describe('Job Model', () => {
 
   beforeEach(async () => {
     await db.query(`DELETE FROM jobs`)
-    await db.query(`DELETE FROM jobs`)
+    await db.query(`DELETE FROM companies`)
 
     c1 = await Company.create({
       handle: "apple",

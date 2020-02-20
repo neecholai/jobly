@@ -14,7 +14,9 @@ const router = new express.Router();
 
 router.get('/', async (req, res, next) => {
   try {
-    const jobs = await Job.getJobs(req.query);
+
+    const { search, min_salary, min_equity } =  req.query;
+    const jobs = await Job.getJobs(search, min_salary, min_equity);
 
     return res.json({ jobs });
   } 
