@@ -8,13 +8,15 @@ const updateCompanySchema = require('../schemas/updateCompanySchema');
 const router = new express.Router();
 
 /**
- * Route for GET /companies
+ * Route for GET /companies 
+ * Gets ALL companies
  * This should return JSON of {companies: [{ handle, name }, ...]}
  */
 
 router.get('/', async (req, res, next) => {
   try {
-    const companies = await Company.getCompanies(req.query);
+    let { search, min_employees, max_employees } = req.params;
+    const companies = await Company.getCompanies(search, min_employees, max_employees);
 
     return res.json({ companies });
   } 

@@ -37,7 +37,7 @@ class Company {
    * Returns [ {handle, name} ... ]
    */
 
-  static async getCompanies({search, min_employees, max_employees}) {
+  static async getCompanies(search, min_employees, max_employees) {
     
     // Max and minimum integers that SQL accepts.
     let maxInt = 2147483647;
