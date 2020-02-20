@@ -47,7 +47,7 @@ class Company {
     min_employees = min_employees || minInt;
     max_employees = max_employees || maxInt;
     search = search || "";
-    
+
     if (min_employees > max_employees) {
       throw new ExpressError('Minimum employees cannot be greater than maximum employees', 400);
     }
