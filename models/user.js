@@ -7,18 +7,18 @@ class User {
 
   /**
    * create a new user
-   * Returns { username, first_name, last_name, email, photo_url, is_admin }
+   * Returns { username, first_name, last_name, email, photo_url }
    */
 
-  static async create({ username, password, first_name, last_name, email, photo_url, is_admin }) {
+  static async create({ username, password, first_name, last_name, email, photo_url }) {
 
     try {
       const result = await db.query(
         `INSERT INTO users
-          (username, password, first_name, last_name, email, photo_url, is_admin)
+          (username, password, first_name, last_name, email, photo_url)
           VALUES ($1, $2, $3, $4, $5, $6, $7)
-          RETURNING username, first_name, last_name, email, photo_url, is_admin`,
-        [username, password, first_name, last_name, email, photo_url, is_admin]
+          RETURNING username, first_name, last_name, email, photo_url`,
+        [username, password, first_name, last_name, email, photo_url]
       );
 
       const user = result.rows[0];

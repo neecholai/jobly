@@ -27,7 +27,7 @@ router.get('/', async (req, res, next) => {
 /**
  * POST /users
  * This should create a new user and return the newly created user.
- * This should return JSON of {user: { username, first_name, last_name, email, photo_url, is_admin } }
+ * This should return JSON of {user: { username, first_name, last_name, email, photo_url } }
  */
 
 router.post('/', async (req, res, next) => {
