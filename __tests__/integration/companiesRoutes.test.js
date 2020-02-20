@@ -3,6 +3,7 @@ process.env.NODE_ENV = 'test';
 const request = require('supertest');
 const db = require('../../db');
 const Company = require('../../models/company');
+const Job = require('../../models/job')
 const app = require('../../app')
 
 
@@ -181,12 +182,21 @@ describe('Company Routes', () => {
 
   
   describe('DELETE /companies/:handle', () => {
-    it('should delete company', async () => {
-      const response = await request(app)
+    it('should delete company and associated jobs', async () => {
+      const job = await Job.create("jobtitle", 1, 1, c1.handle);
+      let response = await request(app)
         .delete(`/companies/${c1.handle}`);
 
       expect(response.statusCode).toBe(200);
       expect(response.body).toEqual({ message: "Company deleted" });
+
+      // check to ensure job does not exist after company deletion
+      try {
+        await Job.getJob(job.id);
+      } 
+      catch (err) {
+        expect(err.message).toBe('Job does not exist');
+      }
     });
 
     it('should throw an error if company does not exist', async () => {

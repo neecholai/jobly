@@ -49,15 +49,5 @@
       ],
       "pattern": "^(.*)$"
     },
-    "date_posted": {
-      "$id": "#/properties/date_posted",
-      "type": "string",
-      "title": "The Date_posted Schema",
-      "default": "",
-      "examples": [
-        "2017-04-30 07:15"
-      ],
-      "pattern": "^(.*)$"
-    }
   }
 }

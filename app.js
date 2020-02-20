@@ -13,6 +13,7 @@ const app = express();
 app.use(express.json());
 
 app.use("/companies", companyRoutes);
+app.use("/jobs", jobRoutes);
 
 // add logging system
 app.use(morgan("tiny"));

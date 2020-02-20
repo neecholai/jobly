@@ -2,6 +2,7 @@ process.env.NODE_ENV = 'test';
 
 const db = require('../../db');
 const Company = require('../../models/company');
+const Job = require('../../models/job')
 
 describe('Company Model', () => {
   let c1;
