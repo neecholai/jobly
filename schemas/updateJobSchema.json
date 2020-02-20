@@ -5,6 +5,7 @@
   "type": "object",
   "title": "The Root Schema",
   "minProperties": 1,
+  "additionalProperties": false,
   "required": [
   ],
   "properties": {
