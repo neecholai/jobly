@@ -36,7 +36,10 @@ describe('Job Model', () => {
         equity: .3,
         company_handle: c1.handle
       });
-      expect(await Job.getJob(j2.id)).toEqual(j2);
+      expect(await Job.getJob(j2.id)).toEqual({
+        ...j2,
+        company: expect.any(Object)
+      });
     });
 
     it('should throw bad request error if job already exists', async () => {
@@ -82,12 +85,15 @@ describe('Job Model', () => {
   describe('Get single job', () => {
     it('should return single job', async () => {
       let job = await Job.getJob(j1.id);
-      expect(job).toEqual(j1);
+      expect(job).toEqual({
+        ...j1,
+        company: expect.any(Object)
+      });
     });
 
     it('should throw an error if job does not exist', async () => {
       try {
-        await Job.getJob('none');
+        await Job.getJob(0);
       }
       catch (err) {
         expect(err.message).toBe("Job does not exist");
@@ -108,7 +114,7 @@ describe('Job Model', () => {
 
     it('should throw an error if job does not exist', async () => {
       try {
-        await Job.updateJob('none', {
+        await Job.updateJob(0, {
           name: 'Accountant'
         });
       }
@@ -145,7 +151,7 @@ describe('Job Model', () => {
 
     it('should throw an error if job does not exist', async () => {
       try {
-        await Job.deleteJob('none');
+        await Job.deleteJob(0);
       }
       catch (err) {
         expect(err.message).toBe("Job does not exist");
