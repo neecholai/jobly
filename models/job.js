@@ -26,7 +26,6 @@ class Job {
     }
 
     catch (err) {
-      console.log("ERROR", err);
       throw new ExpressError("Could not add new job", 400);
     }
   };
@@ -86,8 +85,6 @@ class Job {
       throw new ExpressError("Job does not exist", 404);
     }
 
-    console.log("RESULTS", result.rows[0]);
-
     const job = result.rows.map(job => ({
       id: job.id,
       title: job.title,
@@ -103,7 +100,7 @@ class Job {
       }
     }));
 
-    return job;
+    return job[0];
   }
 
   /**
@@ -117,7 +114,7 @@ class Job {
     Try to get job before updating job. If it doesn't exist, getJob
     will thrown an error.
     */
-    await job.getJob(id);
+    await Job.getJob(id);
 
     /*
     Update job only with columns/items that are passed in as arguments.

@@ -42,9 +42,14 @@ describe('Job Model', () => {
       });
     });
 
-    it('should throw bad request error if job already exists', async () => {
+    it('should throw bad request error if company does not exist', async () => {
       try {
-        await Job.create(j1);
+        await Job.create({
+          title: "testJob2",
+          salary: 2,
+          equity: .3,
+          company_handle: "fakeHandle"
+        });
       }
       catch (err) {
         expect(err.message).toBe("Could not add new job");
@@ -55,7 +60,10 @@ describe('Job Model', () => {
   describe('Get all jobs', () => {
     it('should return all jobs if no parameters entered', async () => {
       let jobs = await Job.getJobs();
-      expect(jobs).toEqual([{ title: j1.title, company_handle: j1.company_handle }]);
+      expect(jobs).toEqual([{
+        title: j1.title,
+        company_handle: j1.company_handle
+      }]);
     });
 
     it('should return only jobs that match the search query', async () => {
