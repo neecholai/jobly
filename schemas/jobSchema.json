@@ -8,7 +8,7 @@
     "title",
     "salary",
     "equity",
-    "company_handle",
+    "company_handle"
   ],
   "properties": {
     "title": {
@@ -51,6 +51,6 @@
         "test"
       ],
       "pattern": "^(.*)$"
-    },
+    }
   }
 }
