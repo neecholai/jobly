@@ -92,15 +92,9 @@ class User {
     try {
       const { query, values } = sqlForPartialUpdate("users", items, "username", username);
       const result = await db.query(query, values);
-      const user = result.rows[0];
+      const { password, is_admin, ...user } = result.rows[0];
 
-      return {
-        username: user.username,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        email: user.email,
-        photo_url: user.photo_url
-      };
+      return user;
     }
     catch (err) {
       throw new ExpressError('Invalid input', 400);

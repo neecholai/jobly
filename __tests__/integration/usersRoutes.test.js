@@ -51,13 +51,11 @@ describe('user Routes', () => {
         email: "user2@email.com"
       }
 
-      
-
       const response = await request(app)
         .post("/users")
         .send(u2);
 
-        const userDetails = await User.getUser(u2.username);
+      const userDetails = await User.getUser(u2.username);
 
       expect(response.statusCode).toBe(201);
       expect(response.body).toEqual({
@@ -68,13 +66,13 @@ describe('user Routes', () => {
     it('should throw bad request error if user already exists', async () => {
       const response = await request(app)
         .post("/users")
-        .send({ 
+        .send({
           ...u1,
           password: "password"
         });
 
       expect(response.statusCode).toBe(400);
-      expect(response.body.message).toBe('Could not add new user')
+      expect(response.body.message).toBe('Could not add new user');
     });
   });
 
@@ -111,6 +109,9 @@ describe('user Routes', () => {
           first_name: 'Tim'
         }
       });
+
+      const updatedUser = await User.getUser(u1.username);
+      expect(updatedUser.first_name).toEqual(response.body.user.first_name);
     });
 
     it('should throw an error if user does not exist', async () => {
@@ -149,7 +150,7 @@ describe('user Routes', () => {
     });
   });
 
-  
+
   describe('DELETE /users/:username', () => {
     it('should delete user', async () => {
       let response = await request(app)
@@ -161,7 +162,7 @@ describe('user Routes', () => {
       // check to ensure user does not exist after user deletion
       try {
         await User.getUser(u1.username);
-      } 
+      }
       catch (err) {
         expect(err.message).toBe('User does not exist');
       }
