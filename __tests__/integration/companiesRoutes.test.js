@@ -183,7 +183,13 @@ describe('Company Routes', () => {
   
   describe('DELETE /companies/:handle', () => {
     it('should delete company and associated jobs', async () => {
-      const job = await Job.create("jobtitle", 1, 1, c1.handle);
+      const job = await Job.create({
+          title: "jobtitle", 
+          salary: 2.00,
+          equity: 0.5,
+          company_handle: c1.handle
+      });
+
       let response = await request(app)
         .delete(`/companies/${c1.handle}`);
 

@@ -11,6 +11,10 @@ class Job {
 
   static async create({ title, salary, equity, company_handle }) {
 
+    console.log("TITLE", title);
+    console.log("salary", salary);
+    console.log("equity", equity);
+    console.log("company_handle", company_handle);
 
     try {
       const result = await db.query(
@@ -27,6 +31,7 @@ class Job {
     }
 
     catch (err) {
+      console.log("ERROR", err);
       throw new ExpressError("Could not add new job", 400);
     }
   };
@@ -82,6 +87,10 @@ class Job {
       [id]
     );
 
+    if (!result.rows[0]) {
+      throw new ExpressError("Job does not exist", 404);
+    }
+
     const job = result.rows[0].map(job => ({
       id: job.id,
       title: job.title,
@@ -96,11 +105,6 @@ class Job {
         logo_url: job.logo_url
       }
     }));
-
-
-    if (!job) {
-      throw new ExpressError("Job does not exist", 404);
-    }
 
     return job;
   }

@@ -17,6 +17,6 @@ CREATE TABLE jobs
     title TEXT NOT NULL,
     salary FLOAT NOT NULL,
     equity FLOAT NOT NULL,
-    company_handle TEXT NOT NULL REFERENCES companies (handle) ON DELETE CASCADE,
-    date_posted TIMESTAMP WITH TIME ZONE
+    company_handle TEXT NOT NULL REFERENCES companies ON DELETE CASCADE,
+    date_posted TIMESTAMP
 );
