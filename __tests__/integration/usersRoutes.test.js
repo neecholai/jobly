@@ -3,14 +3,17 @@ process.env.NODE_ENV = 'test';
 const request = require('supertest');
 const db = require('../../db');
 const User = require('../../models/user');
-const app = require('../../app')
-
+const app = require('../../app');
+const jwt = require('jsonwebtoken');
+const {
+  SECRET_KEY
+} = require('../../config');
 
 describe('user Routes', () => {
   let u1;
 
   beforeEach(async () => {
-    await db.query(`DELETE FROM users`)
+    await db.query(`DELETE FROM users`);
 
     u1 = await User.create({
       username: "user1",
@@ -19,8 +22,14 @@ describe('user Routes', () => {
       last_name: "one",
       email: "user1@email.com",
       photo_url: "https://recoverycafe.org/wp-content/uploads/2019/06/generic-user.png"
-    })
-  })
+    });
+
+    const {
+      is_admin,
+      ...u1Details
+    } = u1;
+    u1 = u1Details;
+  });
 
 
   describe('GET /users', () => {
@@ -36,7 +45,7 @@ describe('user Routes', () => {
           last_name: u1.last_name,
           email: u1.email
         }]
-      })
+      });
     });
   });
 
@@ -49,18 +58,29 @@ describe('user Routes', () => {
         first_name: "user",
         last_name: "two",
         email: "user2@email.com"
-      }
+      };
 
+      // response is a token
       const response = await request(app)
         .post("/users")
         .send(u2);
 
+      // userdetails is user info
       const userDetails = await User.getUser(u2.username);
+      const {
+        password,
+        ...u2Details
+      } = u2;
 
+      expect(userDetails).toEqual({
+        ...u2Details,
+        photo_url: null
+      });
       expect(response.statusCode).toBe(201);
       expect(response.body).toEqual({
-        user: userDetails
+        token: expect.any(String)
       });
+
     });
 
     it('should throw bad request error if user already exists', async () => {
@@ -83,7 +103,9 @@ describe('user Routes', () => {
         .get(`/users/${u1.username}`);
 
       expect(response.statusCode).toBe(200);
-      expect(response.body).toEqual({ user: u1 });
+      expect(response.body).toEqual({
+        user: u1
+      });
     });
 
     it('should throw an error if user does not exist', async () => {
@@ -97,10 +119,24 @@ describe('user Routes', () => {
 
 
   describe('PATCH /users/:username', () => {
-    it('should update user if input is valid', async () => {
+
+    let _token;
+
+    beforeEach(async () => {
+      let u1Payload = {
+        username: u1.username,
+        is_admin: false
+      };
+      _token = jwt.sign(u1Payload, SECRET_KEY);
+    });
+
+    it('should update user if input is valid and user is correct', async () => {
       const response = await request(app)
         .patch(`/users/${u1.username}`)
-        .send({ first_name: 'Tim' });
+        .send({
+          first_name: 'Tim',
+          _token
+        });
 
       expect(response.statusCode).toBe(200);
       expect(response.body).toEqual({
@@ -114,14 +150,37 @@ describe('user Routes', () => {
       expect(updatedUser.first_name).toEqual(response.body.user.first_name);
     });
 
-    it('should throw an error if user does not exist', async () => {
-      const response = await request(app)
-        .patch(`/users/none`)
-        .send({ first_name: 'Tim' });
+    it('should throw unauthorized user error if logged in user doesn\'t match patched user', async () => {
+      let u2 = await User.create({
+        username: "user2",
+        password: "password",
+        first_name: "user",
+        last_name: "two",
+        email: "user2@email.com"
+      });
 
-      expect(response.statusCode).toBe(404);
-      expect(response.body.message).toBe('User does not exist');
+      const response = await request(app)
+        .patch(`/users/${u2.username}`)
+        .send({
+          first_name: 'Tim',
+          _token
+        });
+
+      expect(response.statusCode).toBe(401);
+      expect(response.body.message).toBe('Unauthorized user');
     });
+
+    // it('should throw an error if user does not exist', async () => {
+    //   const response = await request(app)
+    //     .patch(`/users/none`)
+    //     .send({
+    //       first_name: 'Tim',
+    //       _token
+    //     });
+
+    // expect(response.statusCode).toBe(401);
+    // expect(response.body.message).toBe('Unauthorized user');
+    // });
 
     it('should throw an error if user name is already being used', async () => {
       let u2 = await User.create({
@@ -133,8 +192,11 @@ describe('user Routes', () => {
       });
 
       const response = await request(app)
-        .patch(`/users/${u2.username}`)
-        .send({ username: u1.username });
+        .patch(`/users/${u1.username}`)
+        .send({
+          username: u2.username,
+          _token
+        });
 
       expect(response.statusCode).toBe(400);
       expect(response.body.message).toBe('Invalid input')
@@ -143,7 +205,10 @@ describe('user Routes', () => {
     it('should throw an error if invalid input type', async () => {
       const response = await request(app)
         .patch(`/users/${u1.username}`)
-        .send({ first_name: 45 });
+        .send({
+          first_name: 45,
+          _token
+        });
 
       expect(response.statusCode).toBe(400);
       expect(response.body.message).toEqual(["instance.first_name is not of a type(s) string"]);
@@ -152,29 +217,66 @@ describe('user Routes', () => {
 
 
   describe('DELETE /users/:username', () => {
+
+    let _token;
+
+    beforeEach(async () => {
+      let u1Payload = {
+        username: u1.username,
+        is_admin: false
+      };
+      _token = jwt.sign(u1Payload, SECRET_KEY);
+    });
+
     it('should delete user', async () => {
-      let response = await request(app)
-        .delete(`/users/${u1.username}`);
+      const response = await request(app)
+        .delete(`/users/${u1.username}`)
+        .send({
+          _token
+        });
 
       expect(response.statusCode).toBe(200);
-      expect(response.body).toEqual({ message: "User deleted" });
+      expect(response.body).toEqual({
+        message: "User deleted"
+      });
 
       // check to ensure user does not exist after user deletion
       try {
         await User.getUser(u1.username);
-      }
-      catch (err) {
+      } catch (err) {
         expect(err.message).toBe('User does not exist');
       }
     });
 
-    it('should throw an error if user does not exist', async () => {
-      const response = await request(app)
-        .delete(`/users/none`);
+    it('should throw unauthorized user error if logged in user doesn\'t match deleted user', async () => {
+      let u2 = await User.create({
+        username: "user2",
+        password: "password",
+        first_name: "user",
+        last_name: "two",
+        email: "user2@email.com"
+      });
 
-      expect(response.statusCode).toBe(404);
-      expect(response.body.message).toEqual("User does not exist");
+      const response = await request(app)
+        .delete(`/users/${u2.username}`)
+        .send({
+          _token
+        });
+
+      expect(response.statusCode).toBe(401);
+      expect(response.body.message).toBe('Unauthorized user');
     });
+
+    // it('should throw an error if user does not exist', async () => {
+    //   const response = await request(app)
+    //     .delete(`/users/none`)
+    //     .send({
+    //       _token
+    //     });
+
+    //   expect(response.statusCode).toBe(401);
+    //   expect(response.body.message).toBe('Unauthorized user');
+    // });
   });
 });
 

@@ -4,12 +4,10 @@ const User = require('../models/user');
 const jsonschema = require('jsonschema');
 const userSchema = require('../schemas/userSchema');
 const updateUserSchema = require('../schemas/updateUserSchema');
-const createToken = require('../helpers/createToken');
-const {
-  ensureLoggedIn,
-  ensureCorrectUser,
-  ensureAdmin
-} = require('../middleware/auth');
+const { SECRET_KEY } = require('../config');
+const jwt = require('jsonwebtoken');
+
+const { ensureLoggedIn, ensureCorrectUser } = require('../middleware/auth');
 
 const router = new express.Router();
 
@@ -41,14 +39,17 @@ router.post('/', async (req, res, next) => {
     const result = jsonschema.validate(req.body, userSchema);
 
     if (!result.valid) {
-      // pass validatrion errors to error handler
+      // pass validation errors to error handler
       let listOfErrors = result.errors.map(error => error.stack);
       throw new ExpressError(listOfErrors, 400);
     }
 
-    const user = await User.create(req.body);
+    const { username, is_admin } = await User.create(req.body);
 
-    return res.status(201).json({ user });
+    const payload = { username, is_admin };
+    const token = jwt.sign(payload, SECRET_KEY);
+
+    return res.status(201).json({ token });
   }
 
   catch (err) {
@@ -79,7 +80,7 @@ router.get('/:username', async (req, res, next) => {
  * This should return JSON of {user: { username, first_name, last_name, email, photo_url } }
  */
 
-router.patch('/:username', async (req, res, next) => {
+router.patch('/:username', ensureLoggedIn, ensureCorrectUser, async (req, res, next) => {
   try {
     const username = req.params.username;
     const items = req.body;
@@ -106,7 +107,7 @@ router.patch('/:username', async (req, res, next) => {
  * This should return JSON of {message: "User deleted"}
  */
 
-router.delete('/:username', async (req, res, next) => {
+router.delete('/:username', ensureLoggedIn, ensureCorrectUser, async (req, res, next) => {
   try {
     const result = await User.deleteUser(req.params.username);
     return res.json(result);

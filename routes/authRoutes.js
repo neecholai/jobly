@@ -14,7 +14,7 @@ const router = new express.Router();
 router.post('/login', async (req, res, next) => {
   try {
     const { username, password } = req.body;
-    const { isAuthenticated, is_admin } = User.authenticate(username, password);
+    const { isAuthenticated, is_admin } = await User.authenticate(username, password);
 
     if (!isAuthenticated) {
       throw new ExpressError("invalid username or password", 400);
@@ -29,3 +29,5 @@ router.post('/login', async (req, res, next) => {
     return next(err);
   }
 });
+
+module.exports = router;

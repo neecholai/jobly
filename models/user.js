@@ -2,6 +2,7 @@ const db = require('../db');
 const ExpressError = require('../helpers/expressError');
 const sqlForPartialUpdate = require('../helpers/partialUpdate');
 const bcrypt = require('bcrypt');
+const { BCRYPT_WORK_FACTOR } = require('../config');
 
 class User {
 
@@ -20,18 +21,21 @@ class User {
   }) {
 
     try {
+      const hashedPassword = await bcrypt.hash(password, BCRYPT_WORK_FACTOR);
+
       const result = await db.query(
         `INSERT INTO users
           (username, password, first_name, last_name, email, photo_url)
           VALUES ($1, $2, $3, $4, $5, $6)
-          RETURNING username, first_name, last_name, email, photo_url`,
-        [username, password, first_name, last_name, email, photo_url]
+          RETURNING username, first_name, last_name, email, photo_url, is_admin`,
+        [username, hashedPassword, first_name, last_name, email, photo_url]
       );
 
       const user = result.rows[0];
 
       return user;
     } catch (err) {
+      console.log(err);
       throw new ExpressError("Could not add new user", 400);
     }
   };
@@ -146,17 +150,16 @@ class User {
   static async authenticate(username, password) {
 
     const result = await db.query(
-      `SELECT password, is_admin
+      `SELECT password as hashed_password, is_admin
       FROM users
       WHERE username = $1`,
       [username]
     )
 
-    const { password, is_admin } = result.rows;
-    
-    if (!hashedPassword) { return false };
+    const { hashed_password, is_admin } = result.rows[0];
+    if (!hashed_password) { return false };
 
-    const isAuthenticated = await bcrypt.compare(password, hashedPassword);
+    const isAuthenticated = await bcrypt.compare(password, hashed_password);
 
     return isAuthenticated ? { isAuthenticated, is_admin } : false;
   }

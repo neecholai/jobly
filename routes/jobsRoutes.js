@@ -5,6 +5,11 @@ const jsonschema = require('jsonschema');
 const jobSchema = require('../schemas/jobSchema');
 const updateJobSchema = require('../schemas/updateJobSchema');
 
+const {
+  ensureLoggedIn,
+  ensureAdmin
+} = require('../middleware/auth');
+
 const router = new express.Router();
 
 /**
@@ -12,7 +17,7 @@ const router = new express.Router();
  * This should return JSON of {jobs: [{ title, company_handle }, ...]}
  */
 
-router.get('/', async (req, res, next) => {
+router.get('/', ensureLoggedIn, async (req, res, next) => {
   try {
 
     const { search, min_salary, min_equity } =  req.query;
@@ -32,7 +37,7 @@ router.get('/', async (req, res, next) => {
  * This should return JSON of {job: { id, title, salary, equity, company_handle, date_posted } }
  */
 
-router.post('/', async (req, res, next) => {
+router.post('/', ensureLoggedIn, ensureAdmin, async (req, res, next) => {
   try {
     const result = jsonschema.validate(req.body, jobSchema);
 
@@ -58,7 +63,7 @@ router.post('/', async (req, res, next) => {
  * This should return JSON of {job: { id, title, salary, equity, company_handle, date_posted } }
  */
 
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', ensureLoggedIn, async (req, res, next) => {
   try {
     const job = await Job.getJob(req.params.id);
     return res.json({ job });
@@ -75,7 +80,7 @@ router.get('/:id', async (req, res, next) => {
  * This should return JSON of {job: { id, title, salary, equity, company_handle, date_posted } }
  */
 
-router.patch('/:id', async (req, res, next) => {
+router.patch('/:id', ensureLoggedIn, ensureAdmin, async (req, res, next) => {
   try {
     const id = req.params.id;
     const items = req.body;
@@ -102,7 +107,7 @@ router.patch('/:id', async (req, res, next) => {
  * This should return JSON of {message: "job deleted"}
  */
 
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', ensureLoggedIn, ensureAdmin, async (req, res, next) => {
   try {
     const result = await Job.deleteJob(req.params.id);
     return res.json(result);

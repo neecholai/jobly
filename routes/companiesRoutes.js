@@ -5,6 +5,12 @@ const jsonschema = require('jsonschema');
 const companySchema = require('../schemas/companySchema');
 const updateCompanySchema = require('../schemas/updateCompanySchema');
 
+const {
+  ensureLoggedIn,
+  ensureCorrectUser,
+  ensureAdmin
+} = require('../middleware/auth');
+
 const router = new express.Router();
 
 /**
@@ -13,7 +19,7 @@ const router = new express.Router();
  * This should return JSON of {companies: [{ handle, name }, ...]}
  */
 
-router.get('/', async (req, res, next) => {
+router.get('/', ensureLoggedIn, async (req, res, next) => {
   try {
     let { search, min_employees, max_employees } = req.query;
     const companies = await Company.getCompanies(search, min_employees, max_employees);
@@ -32,7 +38,7 @@ router.get('/', async (req, res, next) => {
  * This should return JSON of {company: { handle, name, num_employees, description, logo_url } }
  */
 
-router.post('/', async (req, res, next) => {
+router.post('/', ensureLoggedIn, ensureAdmin, async (req, res, next) => {
   try {
     const result = jsonschema.validate(req.body, companySchema);
 
@@ -58,7 +64,7 @@ router.post('/', async (req, res, next) => {
  * This should return JSON of {company: { handle, name, num_employees, description, logo_url } }
  */
 
-router.get('/:handle', async (req, res, next) => {
+router.get('/:handle', ensureLoggedIn, async (req, res, next) => {
   try {
     const company = await Company.getCompany(req.params.handle);
     return res.json({ company });
@@ -75,7 +81,7 @@ router.get('/:handle', async (req, res, next) => {
  * This should return JSON of {company: { handle, name, num_employees, description, logo_url } }
  */
 
-router.patch('/:handle', async (req, res, next) => {
+router.patch('/:handle', ensureLoggedIn, ensureAdmin, async (req, res, next) => {
   try {
     const handle = req.params.handle;
     const items = req.body;
@@ -102,7 +108,7 @@ router.patch('/:handle', async (req, res, next) => {
  * This should return JSON of {message: "Company deleted"}
  */
 
-router.delete('/:handle', async (req, res, next) => {
+router.delete('/:handle', ensureLoggedIn, ensureAdmin, async (req, res, next) => {
   try {
     const result = await Company.deleteCompany(req.params.handle);
     return res.json(result);

@@ -68,6 +68,16 @@
       "examples": [
         false
       ]
+    },
+    "_token": {
+      "$id": "#/properties/_token",
+      "type": "string",
+      "title": "The _token Schema",
+      "default": "",
+      "examples": [
+        "asajasdfhasdfow"
+      ],
+      "pattern": "^(.*)$"
     }
   }
 }

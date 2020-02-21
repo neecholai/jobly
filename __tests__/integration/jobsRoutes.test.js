@@ -3,17 +3,26 @@ process.env.NODE_ENV = 'test';
 const request = require('supertest');
 const db = require('../../db');
 const Company = require('../../models/company');
-const Job = require('../../models/job')
-const app = require('../../app')
+const Job = require('../../models/job');
+const User = require('../../models/user');
+const app = require('../../app');
+const jwt = require('jsonwebtoken');
+const {
+  SECRET_KEY
+} = require('../../config');
 
 
 describe('Company Routes', () => {
   let c1;
   let j1;
+  let u1;
+  let _token;
 
   beforeEach(async () => {
-    await db.query(`DELETE FROM jobs`)
-    await db.query(`DELETE FROM companies`)
+    await db.query(`DELETE FROM jobs`);
+    await db.query(`DELETE FROM companies`);
+    await db.query(`DELETE FROM users`);
+
 
     c1 = await Company.create({
       handle: "apple",
@@ -29,12 +38,30 @@ describe('Company Routes', () => {
       equity: .4,
       company_handle: c1.handle
     });
-  })
+
+    u1 = await User.create({
+      username: "user1",
+      password: "password",
+      first_name: "user",
+      last_name: "one",
+      email: "user1@email.com",
+      photo_url: "https://recoverycafe.org/wp-content/uploads/2019/06/generic-user.png"
+    });
+
+    let u1Payload = {
+      username: u1.username,
+      is_admin: true
+    };
+    _token = jwt.sign(u1Payload, SECRET_KEY);
+  });
 
   describe('GET /jobs', () => {
     it('should return all jobs if no parameters entered', async () => {
       const response = await request(app)
-        .get("/jobs");
+        .get("/jobs")
+        .send({
+          _token
+        });
 
       expect(response.statusCode).toBe(200);
       expect(response.body).toEqual({
@@ -42,7 +69,7 @@ describe('Company Routes', () => {
           title: j1.title,
           company_handle: j1.company_handle
         }]
-      })
+      });
     });
 
     it('should return only jobs that match the search query', async () => {
@@ -55,7 +82,10 @@ describe('Company Routes', () => {
 
       // Should return only j1 when title matches title for j1
       let response = await request(app)
-        .get(`/jobs?search=${j1.title}`);
+        .get(`/jobs?search=${j1.title}`)
+        .send({
+          _token
+        });
 
       expect(response.statusCode).toBe(200);
       expect(response.body).toEqual({
@@ -67,7 +97,10 @@ describe('Company Routes', () => {
 
       // Should only match jobs with salary greater than or equal to two
       response = await request(app)
-        .get(`/jobs?min_salary=2`);
+        .get(`/jobs?min_salary=2`)
+        .send({
+          _token
+        });
 
       expect(response.statusCode).toBe(200);
       expect(response.body).toEqual({
@@ -81,17 +114,23 @@ describe('Company Routes', () => {
 
 
   describe('POST /jobs', () => {
-    it('should create a job if inputs are valid', async () => {
-      let j2 = {
+    let j2;
+    beforeEach(() => {
+      j2 = {
         title: "testJob2",
         salary: 2,
         equity: .3,
         company_handle: c1.handle
-      }
+      };
+    });
 
+    it('should create a job if inputs are valid and user is an admin', async () => {
       const response = await request(app)
         .post("/jobs")
-        .send(j2);
+        .send({
+          ...j2,
+          _token
+        });
 
       expect(response.statusCode).toBe(201);
       expect(response.body).toEqual({
@@ -114,28 +153,46 @@ describe('Company Routes', () => {
       });
     });
 
-    it('should throw bad request error if company handle does not exist', async () => {
-      let j2 = {
-        title: "testJob2",
-        salary: 2,
-        equity: .3,
-        company_handle: "fakeHandle"
-      }
+    it('should throw unauthorized user error if user is not an admin', async () => {
+      u1Payload = {
+        username: u1.username,
+        is_admin: false
+      };
+      _token = jwt.sign(u1Payload, SECRET_KEY);
 
       const response = await request(app)
         .post("/jobs")
-        .send(j2);
+        .send({
+          ...j2,
+          _token
+        });
+
+      expect(response.statusCode).toBe(401);
+      expect(response.body.message).toBe('Unauthorized user');
+    });
+
+    it('should throw bad request error if company handle does not exist', async () => {
+      j2.company_handle = "fakeHandle";
+
+      const response = await request(app)
+        .post("/jobs")
+        .send({
+          ...j2,
+          _token
+        });
 
       expect(response.statusCode).toBe(400);
       expect(response.body.message).toBe('Could not add new job')
     });
   });
 
-
   describe('GET /jobs/:id', () => {
     it('should return a single job', async () => {
       const response = await request(app)
-        .get(`/jobs/${j1.id}`);
+        .get(`/jobs/${j1.id}`)
+        .send({
+          _token
+        });
 
       expect(response.statusCode).toBe(200);
       expect(response.body).toEqual({
@@ -154,7 +211,10 @@ describe('Company Routes', () => {
 
     it('should throw an error if job does not exist', async () => {
       const response = await request(app)
-        .get(`/jobs/0`);
+        .get(`/jobs/0`)
+        .send({
+          _token
+        });
 
       expect(response.statusCode).toBe(404);
       expect(response.body.message).toBe('Job does not exist');
@@ -163,11 +223,12 @@ describe('Company Routes', () => {
 
 
   describe('PATCH /jobs/:id', () => {
-    it('should update job if input is valid', async () => {
+    it('should update job if input is valid and user is an admin', async () => {
       const response = await request(app)
         .patch(`/jobs/${j1.id}`)
         .send({
-          title: "Accountant"
+          title: "Accountant",
+          _token
         });
 
       expect(response.statusCode).toBe(200);
@@ -183,11 +244,30 @@ describe('Company Routes', () => {
       });
     });
 
+    it('should throw unauthorized user error if user is not an admin', async () => {
+      u1Payload = {
+        username: u1.username,
+        is_admin: false
+      };
+      _token = jwt.sign(u1Payload, SECRET_KEY);
+
+      const response = await request(app)
+        .patch(`/jobs/${j1.id}`)
+        .send({
+          title: "Accountant",
+          _token
+        });
+
+      expect(response.statusCode).toBe(401);
+      expect(response.body.message).toBe('Unauthorized user');
+    });
+
     it('should throw an error if job does not exist', async () => {
       const response = await request(app)
         .patch(`/jobs/0`)
         .send({
-          title: "fakeTitle"
+          title: "fakeTitle",
+          _token
         });
 
       expect(response.statusCode).toBe(404);
@@ -198,7 +278,8 @@ describe('Company Routes', () => {
       const response = await request(app)
         .patch(`/jobs/${j1.id}`)
         .send({
-          company_handle: "fakeHandle"
+          company_handle: "fakeHandle",
+          _token
         });
 
       expect(response.statusCode).toBe(400);
@@ -209,7 +290,8 @@ describe('Company Routes', () => {
       const response = await request(app)
         .patch(`/jobs/${j1.id}`)
         .send({
-          title: 45
+          title: 45,
+          _token
         });
 
       expect(response.statusCode).toBe(400);
@@ -219,9 +301,12 @@ describe('Company Routes', () => {
 
 
   describe('DELETE /jobs/:id', () => {
-    it('should delete job', async () => {
+    it('should delete job if user is an admin', async () => {
       let response = await request(app)
-        .delete(`/jobs/${j1.id}`);
+        .delete(`/jobs/${j1.id}`)
+        .send({
+          _token
+        });
 
       expect(response.statusCode).toBe(200);
       expect(response.body).toEqual({
@@ -236,15 +321,36 @@ describe('Company Routes', () => {
       }
     });
 
+    it('should throw unauthorized user error if user is not an admin', async () => {
+      u1Payload = {
+        username: u1.username,
+        is_admin: false
+      };
+      _token = jwt.sign(u1Payload, SECRET_KEY);
+
+      let response = await request(app)
+        .delete(`/jobs/${j1.id}`)
+        .send({
+          _token
+        });
+
+      expect(response.statusCode).toBe(401);
+      expect(response.body.message).toBe('Unauthorized user');
+    });
+
     it('should throw an error if job does not exist', async () => {
       const response = await request(app)
-        .delete(`/jobs/0`);
+        .delete(`/jobs/0`)
+        .send({
+          _token
+        });
 
       expect(response.statusCode).toBe(404);
       expect(response.body.message).toEqual("Job does not exist");
     });
   });
 });
+
 
 afterAll(async function () {
   await db.end();
