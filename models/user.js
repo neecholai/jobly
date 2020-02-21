@@ -1,7 +1,7 @@
-
 const db = require('../db');
 const ExpressError = require('../helpers/expressError');
 const sqlForPartialUpdate = require('../helpers/partialUpdate');
+const bcrypt = require('bcrypt');
 
 class User {
 
@@ -10,7 +10,14 @@ class User {
    * Returns { username, first_name, last_name, email, photo_url }
    */
 
-  static async create({ username, password, first_name, last_name, email, photo_url }) {
+  static async create({
+    username,
+    password,
+    first_name,
+    last_name,
+    email,
+    photo_url
+  }) {
 
     try {
       const result = await db.query(
@@ -24,9 +31,7 @@ class User {
       const user = result.rows[0];
 
       return user;
-    }
-
-    catch (err) {
+    } catch (err) {
       throw new ExpressError("Could not add new user", 400);
     }
   };
@@ -90,13 +95,19 @@ class User {
     and 'values' is array of the values to be updated, and the username that we query by
     */
     try {
-      const { query, values } = sqlForPartialUpdate("users", items, "username", username);
+      const {
+        query,
+        values
+      } = sqlForPartialUpdate("users", items, "username", username);
       const result = await db.query(query, values);
-      const { password, is_admin, ...user } = result.rows[0];
+      const {
+        password,
+        is_admin,
+        ...user
+      } = result.rows[0];
 
       return user;
-    }
-    catch (err) {
+    } catch (err) {
       throw new ExpressError('Invalid input', 400);
     }
   }
@@ -121,7 +132,33 @@ class User {
       throw new ExpressError("User does not exist", 404);
     }
 
-    return { message: "User deleted" }
+    return {
+      message: "User deleted"
+    }
+  }
+
+  /**
+   * Authenticate if username/password is valid
+   * Returns True if valid
+   * Returns False if username does not exist or password does not match for user.
+   */
+
+  static async authenticate(username, password) {
+
+    const result = await db.query(
+      `SELECT password, is_admin
+      FROM users
+      WHERE username = $1`,
+      [username]
+    )
+
+    const { password, is_admin } = result.rows;
+    
+    if (!hashedPassword) { return false };
+
+    const isAuthenticated = await bcrypt.compare(password, hashedPassword);
+
+    return isAuthenticated ? { isAuthenticated, is_admin } : false;
   }
 }
 

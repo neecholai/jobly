@@ -4,6 +4,12 @@ const User = require('../models/user');
 const jsonschema = require('jsonschema');
 const userSchema = require('../schemas/userSchema');
 const updateUserSchema = require('../schemas/updateUserSchema');
+const createToken = require('../helpers/createToken');
+const {
+  ensureLoggedIn,
+  ensureCorrectUser,
+  ensureAdmin
+} = require('../middleware/auth');
 
 const router = new express.Router();
 
